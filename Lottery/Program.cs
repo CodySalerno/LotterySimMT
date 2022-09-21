@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Lottery
 {
     class Program
     {
+        private static readonly object coinLock = new();
         public static int activeThreadCount = 0; //how many games of the lottery are being played now
         public static int totalThreadCount = 0; //how many total games have been started
         public static int attempts = 32; //total number of games meant to be played
@@ -41,20 +43,23 @@ namespace Lottery
                 int coin1 = random.Next(0, 292201338); //odds of winning the lottery
                 if (coin1 == 0) //if success
                 {
-                    Console.WriteLine("adding " + runs + " to allattempts[" + (index) + "]");
-                    allAttempts[index] = runs; //each thread should have a unique index
-                    togo--; //success means 1 game is done
-                    Console.WriteLine("Thread #" + index + " finished after " + runs + " runs"); //shows what thread finished and how many attempts
-                    if (togo == 0) //if all games have been completed
+                    lock (coinLock)
                     {
-                        // Array.Sort(allAttempts); //sorts array into luckiest to least lucky
-                        display = String.Join(Environment.NewLine, allAttempts); //creates a string of all attempts
-                        Console.WriteLine(display); //writes the string to console
-                        SW.Stop(); //stops timer
-                        Console.WriteLine(SW.Elapsed); //writes how long program took
-                        Console.WriteLine(allAttempts.Average()); //shows average number of runs to succeed
+                        Console.WriteLine("adding " + runs + " to allattempts[" + (index) + "]");
+                        allAttempts[index] = runs; //each thread should have a unique index
+                        togo--; //success means 1 game is done
+                        Console.WriteLine("Thread #" + index + " finished after " + runs + " runs"); //shows what thread finished and how many attempts
+                        if (togo == 0) //if all games have been completed
+                        {
+                            // Array.Sort(allAttempts); //sorts array into luckiest to least lucky
+                            display = String.Join(Environment.NewLine, allAttempts); //creates a string of all attempts
+                            Console.WriteLine(display); //writes the string to console
+                            SW.Stop(); //stops timer
+                            Console.WriteLine(SW.Elapsed); //writes how long program took
+                            Console.WriteLine(allAttempts.Average()); //shows average number of runs to succeed
+                        }
+                        activeThreadCount--; //thread is done so active number goes down
                     }
-                    activeThreadCount--; //thread is done so active number goes down
                     break; //ends while loop terminating thread
                 }
             }
