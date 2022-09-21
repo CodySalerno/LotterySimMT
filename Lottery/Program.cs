@@ -4,7 +4,6 @@ namespace Lottery
 {
     class Program
     {
-        public static object lotteryLock = new();
         public static int activeThreadCount = 0; //how many games of the lottery are being played now
         public static int totalThreadCount = 0; //how many total games have been started
         public static int attempts = 32; //total number of games meant to be played
