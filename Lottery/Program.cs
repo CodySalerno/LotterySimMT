@@ -5,10 +5,10 @@ namespace Lottery
 {
     class Program
     {
-        private static readonly object coinLock = new();
-        public static int activeThreadCount = 0; //how many games of the lottery are being played now
-        public static int totalThreadCount = 0; //how many total games have been started
-        public static int attempts = 32; //total number of games meant to be played
+        private static readonly object coinLock = new(); //lock object
+        public static int activeThreadCount = -1; //how many games of the lottery are being played now
+        public static int totalThreadCount = -1; //how many total games have been started
+        public static int attempts = 1000; //total number of games meant to be played
         public static double[] allAttempts = new double[attempts]; //array of doubles with one index for every game
         public static string display = ""; //final display
         public static int togo = attempts; //how many games still need to be completed; starts at total attempt number
@@ -17,14 +17,17 @@ namespace Lottery
         static void Main()
         {
             SW.Start();
-            while (totalThreadCount < attempts) //haven't started enough threads for every attempt
+            while (totalThreadCount < (attempts -1)) //haven't started enough threads for every attempt
             {
                 if (activeThreadCount < 16 && (totalThreadCount != current)) /* limits it to a max of 16 games being played at once
                                                                               * second condition makes sure counts have been updated so as to not cause race conditions*/
                 {
+                    
                     current = totalThreadCount;
                     Thread my_thread = new(() => StartZero(totalThreadCount)); /*starts a thread to run the StartZero function 
                                                                                 * with the number of threads before it as the index */
+                    activeThreadCount++;
+                    totalThreadCount++;
                     my_thread.Start();
                 }
             }
@@ -32,18 +35,22 @@ namespace Lottery
 
         static void StartZero(int index)
         {
-            activeThreadCount++;
-            totalThreadCount++;
+            if (index >= attempts)
+            {
+                Console.WriteLine("oops");
+                return;
+            }
+            
             Console.WriteLine("Starting thread #" + index + " " + activeThreadCount + " threads are active");
             double runs = 0; //number of times an attempt has been made to win
             Random random = new(); //creates random number generator
             while (true)
             {
                 runs++; //every loop tries to get a 0
-                int coin1 = random.Next(0, 292201338); //odds of winning the lottery
+                long coin1 = random.NextInt64(0, 2); // 0 or 1
                 if (coin1 == 0) //if success
                 {
-                    lock (coinLock)
+                    lock (coinLock) //locks the object so no other thread can acess
                     {
                         Console.WriteLine("adding " + runs + " to allattempts[" + (index) + "]");
                         allAttempts[index] = runs; //each thread should have a unique index
